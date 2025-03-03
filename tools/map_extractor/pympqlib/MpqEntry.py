@@ -1,12 +1,15 @@
 from io import BytesIO
 from struct import unpack
+
+from tools.map_extractor.pympqlib.MpqEntryBase import MpqEntryBase
 from tools.map_extractor.pympqlib.MpqFlags import MpqFlags
 
 
-class MpqEntry:
+class MpqEntry(MpqEntryBase):
     SIZE = 16
 
     def __init__(self, mpq_archive):
+        super().__init__(mpq_archive=mpq_archive)
         self.mpq_archive = mpq_archive
         self.compressed_size = 0
         self.file_size = 0
@@ -22,6 +25,7 @@ class MpqEntry:
         self.filename = filename
         self.encryption_seed = self.calculate_encryption_seed()
         self.filename = self.filename.rsplit("\\")[-1]
+        self._sanitize()
 
     def is_encrypted(self):
         return self.flags & MpqFlags.Encrypted

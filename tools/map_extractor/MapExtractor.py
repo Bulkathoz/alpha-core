@@ -23,6 +23,7 @@ class MapExtractor:
         if not config.Extractor.Maps.wow_root_path:
             Logger.error('No wow root path provided. (World of Warcraft base directory)')
             exit()
+
         # Validate its existence.
         elif not os.path.exists(config.Extractor.Maps.wow_root_path):
             Logger.error(f'Data path "{config.Extractor.Maps.wow_root_path}" does not exist.')

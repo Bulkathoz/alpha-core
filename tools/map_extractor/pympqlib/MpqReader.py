@@ -7,14 +7,14 @@ from utils.Logger import Logger
 class MpqReader:
     def __init__(self, mpq_archive, mpq_entry):
         self.mpq_archive = mpq_archive
-        self.stream = mpq_archive.stream
         self.entry_stream = None
         self.mpq_entry = mpq_entry
-        self.block_size = mpq_archive.block_size
         self.current_block_index = -1
         self._position = 0
         self.data = bytearray()
         self.length = mpq_entry.file_size
+        self.stream = mpq_archive.stream
+        self.block_size = mpq_archive.block_size
         self._fill()
 
     def __enter__(self):
@@ -37,7 +37,7 @@ class MpqReader:
         return line_bytes.decode('utf-8')
 
     def _fill(self):
-        if self.mpq_entry.is_single_unit():
+        if not self.mpq_entry.is_orphan and self.mpq_entry.is_single_unit():
             Logger.error('Unsupported method.')
             exit()
 

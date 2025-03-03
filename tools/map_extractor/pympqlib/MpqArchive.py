@@ -1,6 +1,8 @@
 import os
 from io import BytesIO
 from struct import unpack
+
+from tools.map_extractor.pympqlib.MpqOrphanEntry import MpqOrphanEntry
 from utils.Logger import Logger
 from tools.map_extractor.pympqlib.MpqHash import MpqHash
 from tools.map_extractor.pympqlib.MpqEntry import MpqEntry
@@ -9,7 +11,7 @@ from tools.map_extractor.pympqlib.MpqReader import MpqReader
 
 
 class MpqArchive:
-    def __init__(self, filename):
+    def __init__(self, filename, orphans=False, is_orphan=False):
         self.filename = filename
         self.name = os.path.basename(filename).capitalize()
         self.storm_buffer = list()
@@ -18,6 +20,9 @@ class MpqArchive:
         self.stream = None
         self.mpq_hashes = []
         self.mpq_entries = []
+        self.mpq_orphan_archives: list[MpqArchive] = []
+        self.load_orphans = orphans
+        self.is_orphan = is_orphan
 
     def __enter__(self):
         self.initialize()
@@ -48,15 +53,21 @@ class MpqArchive:
         decrypted_data = self.decrypt_block_from_bytes(entries_data, self.hash_string('(block table)', 0x300))
         self.build_mpq_entries(decrypted_data)
         self.add_list_filenames()
+        if self.load_orphans:
+            self.load_orphan_files()
 
     def add_list_filenames(self):
         hash_entry = self._add_filename('(listfile)')
         if not hash_entry:
+            if self.is_orphan and self.mpq_entries:
+                if self.filename.endswith('wmo.MPQ') or self.filename.endswith('wdl.MPQ') or self.filename.endswith(
+                        'wdt.MPQ'):
+                    self.mpq_entries[0].filename = os.path.basename(self.filename[:-len('.MPQ')])
             return False
 
-        mpq_entry: MpqEntry = self.mpq_entries[hash_entry.block_index]
+        mpq_entry: MpqEntry = self.mpq_entries[hash_entry.block_index if not self.is_orphan else 0]
         if not mpq_entry:
-            return
+            return False
 
         if not mpq_entry.is_encrypted():
             return False
@@ -82,10 +93,21 @@ class MpqArchive:
         return True
 
     def find_file(self, name):
+        if name.endswith('.MDL') or name.endswith('.mld'):
+            name = name[:-len('.MLD')] + '.mdx'
+
         for entry in self.mpq_entries:
             if entry.filename.lower() != name.lower():
                 continue
             return entry
+
+        # Nested.
+        for archive in self.mpq_orphan_archives:
+            for entry in archive.mpq_entries:
+                if entry.filename.lower() != name.lower():
+                    continue
+                return entry
+
         return None
 
     def read_file_bytes(self, mpq_entry):
@@ -198,3 +220,14 @@ class MpqArchive:
             data[i + 2] = (result >> 16) & 0xff
             data[i + 3] = (result >> 24) & 0xff
         return bytes(data)
+
+    # Load non-packed files from Data/World.
+    def load_orphan_files(self):
+        for root, dirs, files in os.walk(os.path.join(os.path.dirname(self.filename), 'World')):
+            for file in files:
+                if 'mpq' not in file and 'MPQ' not in file:
+                    print(file)
+                    continue
+                orphan_archive = MpqArchive(filename=os.path.join(root, file), is_orphan=True)
+                orphan_archive.initialize()
+                self.mpq_orphan_archives.append(orphan_archive)

@@ -13,6 +13,7 @@ from game.world.managers.CommandManager import CommandManager
 from game.world.managers.maps.MapManager import MapManager
 from game.world.managers.maps.MapTile import MapTile
 from tools.map_extractor.MapExtractor import MapExtractor
+from tools.map_extractor.NavExtractor import NavExtractor
 from utils.ConfigManager import config, ConfigManager
 from utils.Logger import Logger
 from utils.PathManager import PathManager
@@ -130,9 +131,8 @@ if __name__ == '__main__':
         print(f'Invalid config.yml version. Expected {ConfigManager.EXPECTED_VERSION}, none found.')
         exit()
 
-    if args.extract:
-        MapExtractor.run()
-        exit()
+    NavExtractor.run()
+    exit()
 
     # Validate if maps available and if version match.
     if not MapManager.validate_map_files():

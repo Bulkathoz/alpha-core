@@ -1,6 +1,17 @@
 class DataHolders:
     AREA_TABLES_BY_MAP = {}
     MAPS = {}
+    GAMEOBJECT_DISPLAY_INFO = {}
+    DOODADS = []
+    WMOS = []
+
+    @staticmethod
+    def add_go_info(go_info):
+        DataHolders.GAMEOBJECT_DISPLAY_INFO[go_info.id] = go_info
+
+    @staticmethod
+    def get_go_infos():
+        return list(DataHolders.GAMEOBJECT_DISPLAY_INFO.values())
 
     @staticmethod
     def add_area_table(area_table):
