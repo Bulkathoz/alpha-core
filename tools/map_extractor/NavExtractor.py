@@ -88,13 +88,13 @@ class NavExtractor:
                     Logger.warning(f'[{go_info.path}] does not exist as defined in GameObjectDisplayInfo.dbc, skipping.')
                     continue
 
+                Logger.info(f'[{go_info.filename}] processing...')
+
                 if file.filename.endswith('x'):
-                    pass
-                    #doodad = Doodad(file)
-                    #if doodad.has_geometry:
-                    #    Logger.info(f'[{go_info.filename}] has geometry defined.')
+                    doodad = Doodad(file)
+                    if doodad.has_geometry:
+                        Logger.info(f'[{go_info.filename}] has geometry defined.')
                 else:
-                    Logger.info(f'[{go_info.filename}] processing...')
                     wmo = Wmo(file)
 
         input()
